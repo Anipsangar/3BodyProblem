@@ -32,3 +32,17 @@ To run the scripts, you will need PyTorch and standard scientific libraries. For
 ```bash
 pip install torch_geometric torchdiffeq
 ```
+
+## Conclusion
+
+The 3-Body Problem serves as an excellent benchmark for evaluating the ability of neural networks to model chaotic physical systems. Our experiments reveal clear differences in architecture performance:
+
+1. **PINNs** struggle to extrapolate beyond their training distribution due to their reliance on absolute time mapping, effectively memorizing trajectories without learning the underlying dynamics.
+2. **Autoregressive MLPs** capture step-by-step state changes but are severely limited by error accumulation (drift), leading to rapid divergence in chaotic regimes.
+3. **GNNs combined with Neural ODEs** provide the most robust solution. By explicitly modeling interactions (forces) and utilizing continuous-time integration, this approach mitigates drift and respects the physical rules governing the system.
+
+**Note: This project is still a work in progress.** While the initial results for the GNN+ODE architecture are promising, the repository is not yet complete. There are numerous possibilities left to explore, including:
+- Extensive hyperparameter tuning for the GNN models.
+- Evaluating different Neural ODE solvers (e.g., Runge-Kutta variants) for improved speed and accuracy.
+- Exploring more advanced Graph Neural Network architectures, such as Message Passing Neural Networks (MPNNs) with attention mechanisms.
+- Adding strict energy and momentum conservation constraints directly into the GNN+ODE loss function.

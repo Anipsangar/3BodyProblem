@@ -72,7 +72,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 criterion = nn.MSELoss()
 
 print("Training Autoregressive MLP...")
-epochs = 3000
+epochs = 10000
 for epoch in range(1, epochs + 1):
     optimizer.zero_grad()
     
