@@ -1,7 +1,8 @@
 import json
 import os
 
-filepath = r"c:\Users\client-jempol-pc37\Downloads\Personal Project\3BodyProblem\Three_Body_Problem_PINN_(Physics_Informed_Neural_Network).ipynb"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+filepath = os.path.join(base_dir, "Three_Body_Problem_PINN_(Physics_Informed_Neural_Network).ipynb")
 with open(filepath, "r", encoding="utf-8") as f:
     nb = json.load(f)
 

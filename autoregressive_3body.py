@@ -104,17 +104,59 @@ with torch.no_grad():
         
 pred_states = torch.stack(pred_states).cpu().numpy()
 
-plt.figure(figsize=(8,8))
-plt.plot(states[:,0], states[:,1], label='Body1 (Ref)')
-plt.plot(states[:,2], states[:,3], label='Body2 (Ref)')
-plt.plot(states[:,4], states[:,5], label='Body3 (Ref)')
+def calc_conservation(s):
+    x = s[:, 0:6:2]; y = s[:, 1:6:2]
+    vx = s[:, 6:12:2]; vy = s[:, 7:12:2]
+    K = 0.5 * np.sum(vx**2 + vy**2, axis=1)
+    U = np.zeros(s.shape[0])
+    for i, j in [(0, 1), (0, 2), (1, 2)]:
+        r = np.sqrt((x[:, j] - x[:, i])**2 + (y[:, j] - y[:, i])**2 + eps**2)
+        U -= G / r
+    E = K + U
+    Px = np.sum(vx, axis=1)
+    Py = np.sum(vy, axis=1)
+    P = np.sqrt(Px**2 + Py**2)
+    L = np.sum(x * vy - y * vx, axis=1)
+    return E, P, L
 
-plt.plot(pred_states[:,0], pred_states[:,1], '--', label='Body1 (Pred)')
-plt.plot(pred_states[:,2], pred_states[:,3], '--', label='Body2 (Pred)')
-plt.plot(pred_states[:,4], pred_states[:,5], '--', label='Body3 (Pred)')
+E_ref, P_ref, L_ref = calc_conservation(states)
+E_pred, P_pred, L_pred = calc_conservation(pred_states)
 
-plt.legend()
-plt.title('Autoregressive State-Stepping Prediction')
-plt.axis('equal')
-plt.savefig('autoregressive_plot.png')
+delta_E = np.abs((E_pred - E_pred[0]) / E_pred[0])
+delta_P = np.abs(P_pred - P_pred[0])
+delta_L = np.abs(L_pred - L_pred[0])
+
+print("\n--- Physical Conservation Diagnostics ---")
+print(f"Mean Relative Energy Drift:  {np.mean(delta_E):.4e}")
+print(f"Max Linear Momentum Drift:   {np.max(delta_P):.4e}")
+print(f"Max Angular Momentum Drift:  {np.max(delta_L):.4e}")
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+
+ax1.plot(states[:,0], states[:,1], label='Body1 (Ref)')
+ax1.plot(states[:,2], states[:,3], label='Body2 (Ref)')
+ax1.plot(states[:,4], states[:,5], label='Body3 (Ref)')
+
+ax1.plot(pred_states[:,0], pred_states[:,1], '--', label='Body1 (Autoregressive)')
+ax1.plot(pred_states[:,2], pred_states[:,3], '--', label='Body2 (Autoregressive)')
+ax1.plot(pred_states[:,4], pred_states[:,5], '--', label='Body3 (Autoregressive)')
+
+ax1.legend()
+ax1.set_title('Autoregressive State-Stepping Prediction')
+ax1.set_xlabel('X')
+ax1.set_ylabel('Y')
+ax1.axis('equal')
+
+ax2.plot(t_eval, delta_E, label='Relative Energy Drift |ΔE / E0|', color='crimson')
+ax2.plot(t_eval, delta_P, label='Linear Momentum Drift |ΔP|', color='navy')
+ax2.plot(t_eval, delta_L, label='Angular Momentum Drift |ΔL|', color='darkgreen')
+ax2.set_title('Conservation Invariants Drift (Drift Compounding)')
+ax2.set_xlabel('Time t')
+ax2.set_ylabel('Drift Magnitude')
+ax2.set_yscale('log')
+ax2.legend()
+ax2.grid(True, which="both", ls="--", alpha=0.4)
+
+plt.tight_layout()
+plt.savefig('autoregressive_plot.png', dpi=150)
 print("Saved plot to autoregressive_plot.png")
